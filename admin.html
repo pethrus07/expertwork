@@ -169,10 +169,39 @@
   @media(max-width:560px){.tl-row{grid-template-columns:1fr 1fr}}
   .tl-del{background:#FDEAEA;color:var(--danger);border-radius:10px;padding:0 13px;font-weight:700;font-size:18px;align-self:stretch;transition:background .14s}
   .tl-del:hover{background:#F8D7D4}
+  .foto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:10px}
+  .foto-item{position:relative;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#F5F8FC}
+  .foto-item img{width:100%;height:88px;object-fit:cover;display:block;background:#E1EAF6}
+  .foto-item input{border:none;border-top:1px solid var(--line);border-radius:0;font-size:12px;padding:7px 9px;background:#fff}
+  .foto-item input:focus{box-shadow:none;border-top-color:var(--primary-2)}
+  .foto-del{position:absolute;top:6px;right:6px;background:rgba(9,20,36,.72);color:#fff;width:24px;height:24px;border-radius:8px;font-size:15px;line-height:1;display:grid;place-items:center}
+  .foto-del:hover{background:var(--danger)}
+  .up-hint{font-size:11.5px;color:var(--ink-3);margin-top:7px}
 
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--navy);color:#fff;padding:13px 22px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:var(--sh-lg);z-index:80;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;display:flex;align-items:center;gap:9px}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:#5FE0A8}
+  /* nav + relatórios + alertas */
+  .topnav{display:flex;gap:6px;margin-left:6px}
+  .tn{background:rgba(255,255,255,.10);color:#cfe0f5;padding:8px 15px;border-radius:9px;font-size:13px;font-weight:600;font-family:var(--disp);letter-spacing:.01em}
+  .tn.active{background:#fff;color:var(--navy)}
+  .selo{font-family:var(--mono);font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px;margin-left:7px;vertical-align:middle}
+  .selo.baixo{background:var(--warn-bg);color:var(--warn)} .selo.esgotado{background:#F6E1DE;color:var(--danger)}
+  .alert-banner{display:flex;align-items:center;gap:11px;background:var(--warn-bg);border:1px solid #EAC7A9;color:#7a3f10;border-radius:13px;padding:13px 17px;margin-bottom:16px;font-size:13.5px;font-weight:600;cursor:pointer}
+  .alert-banner svg{width:20px;height:20px;stroke:var(--warn);fill:none;stroke-width:2;flex:0 0 20px}
+  .alert-banner b{color:var(--warn)} .alert-banner .go{margin-left:auto;color:var(--primary);font-weight:700}
+  .rep-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .rep-head h2{margin:0;font-family:var(--disp);font-size:21px;letter-spacing:-.01em}
+  .rep-actions{display:flex;gap:8px}
+  .bars{display:flex;flex-direction:column;gap:10px;margin-top:4px}
+  .bar-row{display:grid;grid-template-columns:160px 1fr auto;gap:12px;align-items:center;font-size:13px}
+  @media(max-width:560px){.bar-row{grid-template-columns:100px 1fr auto}}
+  .bar-row .bl{color:var(--ink-2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-track{height:12px;border-radius:7px;background:var(--line-2);overflow:hidden}
+  .bar-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,var(--primary-2),var(--primary))}
+  .bar-row .bv{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap;color:var(--ink)}
+  .rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:820px){.rep-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -196,12 +225,18 @@
   <header class="topbar">
     <div class="wm">EXPERT <b>WORK</b></div>
     <span class="pill">Admin geral</span>
+    <nav class="topnav">
+      <button class="tn active" id="tab-empresas" onclick="showView('empresas')">Empresas</button>
+      <button class="tn" id="tab-relatorios" onclick="showView('relatorios')">Relatórios</button>
+    </nav>
     <span class="sp"></span>
     <div class="who"><span class="who-av" id="admAv">CW</span><span id="admName"></span></div>
     <button class="out" onclick="logout()">Sair</button>
   </header>
 
   <main class="content">
+   <div id="viewEmpresas">
+    <div id="alertBanner"></div>
     <section class="overview" id="overview"></section>
     <div class="grid">
       <aside class="panel col-emp">
@@ -216,6 +251,8 @@
         </div>
       </section>
     </div>
+   </div>
+   <div id="viewRelatorios" style="display:none"></div>
   </main>
 </div>
 
@@ -261,6 +298,7 @@ async function doLogin(){
   try{
     const j=await api('POST','/api/admin/login',{login,senha});
     TOKEN=j.token;ADMIN=j.admin;
+    try{localStorage.setItem('ew_admin_token',TOKEN);localStorage.setItem('ew_admin',JSON.stringify(ADMIN));}catch(e){}
     $('loginErr').classList.remove('show');
     $('login').style.display='none';$('app').style.display='flex';
     $('admName').textContent=ADMIN.nome;$('admAv').textContent=initials(ADMIN.nome);
@@ -270,6 +308,7 @@ async function doLogin(){
 function logout(){
   if(TOKEN)fetch('/api/admin/logout',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN}}).catch(()=>{});
   TOKEN=null;ADMIN=null;CURRENT=null;
+  try{localStorage.removeItem('ew_admin_token');localStorage.removeItem('ew_admin');}catch(e){}
   $('app').style.display='none';$('login').style.display='flex';$('apass').value='';
 }
 
@@ -277,7 +316,7 @@ function logout(){
 async function loadEmpresas(keepCurrent){
   const j=await api('GET','/api/admin/empresas');
   EMPRESAS=j.empresas||[];
-  renderOverview();renderEmpList();
+  renderOverview();renderEmpList();renderAlertBanner();
   if(keepCurrent&&CURRENT)openDetail(CURRENT);
 }
 function renderOverview(){
@@ -294,6 +333,8 @@ function renderOverview(){
 function renderEmpList(){
   const q=($('empSearch')?$('empSearch').value:'').toLowerCase().trim();
   const list=EMPRESAS.filter(e=>!q||(e.empresa.nome||'').toLowerCase().includes(q)||(e.login||'').toLowerCase().includes(q));
+  const ord={esgotado:0,baixo:1,ok:2};
+  list.sort((a,b)=>((ord[a.alerta]!=null?ord[a.alerta]:2)-(ord[b.alerta]!=null?ord[b.alerta]:2))||String(a.empresa.nome||'').localeCompare(String(b.empresa.nome||'')));
   const el=$('empList');
   if(!EMPRESAS.length){el.innerHTML='<div class="empty-mini">Nenhuma empresa ainda.<br>Clique em “+ Nova”.</div>';return;}
   if(!list.length){el.innerHTML='<div class="empty-mini">Nada encontrado para “'+esc(q)+'”.</div>';return;}
@@ -301,7 +342,7 @@ function renderEmpList(){
     const dep=e.saldo.depositado||0, pct=dep>0?Math.min(100,Math.round(((e.saldo.utilizado||0)+(e.saldo.reservado||0))/dep*100)):0;
     return `<button class="emp ${CURRENT===e.id?'active':''}" onclick="openDetail('${e.id}')">
       <div class="emp-top"><span class="avatar" style="background:${avColor(e.id)}">${initials(e.empresa.nome||e.login)}</span>
-        <div><div class="nm">${esc(e.empresa.nome||e.login)}</div><div class="lg">${esc(e.login)} · ${e.totalOS} OS</div></div></div>
+        <div><div class="nm">${esc(e.empresa.nome||e.login)}${e.alerta&&e.alerta!=='ok'?` <span class="selo ${e.alerta}">${e.alerta==='esgotado'?'Esgotado':'Baixo'}</span>`:''}</div><div class="lg">${esc(e.login)} · ${e.totalOS} OS</div></div></div>
       <div class="emp-saldo"><span class="v num">${money(e.saldo.disponivel)}</span><span class="l">disponível</span></div>
       <div class="meter ${pct>=85?'hot':''}"><i style="width:${pct}%"></i></div>
       <div class="emp-meta"><span>${pct}% comprometido</span><span>${moneyK(dep)} depositado</span></div>
@@ -413,7 +454,8 @@ async function saveRecarga(id){
 const STATUS_OPTS=['solicitada','aberta','em_andamento','concluida','cancelada'];
 const PRIOR_OPTS=[['alta','Alta'],['media','Média'],['baixa','Baixa']];
 const TIPO_OPTS=[['corretiva','Corretiva'],['preventiva','Preventiva'],['preditiva','Preditiva'],['melhoria','Melhoria'],['novo_projeto','Novo projeto'],['instalacao','Instalação']];
-let OS_TL=[];
+let OS_TL=[], OS_FOTOS=[];
+const FOTO_PH="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='88'%3E%3Crect width='120' height='88' fill='%23E1EAF6'/%3E%3Cpath d='M44 56l14-16 12 12 8-8 10 12' stroke='%23A9C0DC' stroke-width='3' fill='none'/%3E%3Ccircle cx='46' cy='34' r='6' fill='%23A9C0DC'/%3E%3C/svg%3E";
 function selOpts(list,cur){return list.map(v=>Array.isArray(v)?`<option value="${v[0]}" ${cur===v[0]?'selected':''}>${v[1]}</option>`:`<option value="${v}" ${cur===v?'selected':''}>${ST_LABEL[v]||v}</option>`).join('');}
 
 async function openOS(empId,osId){
@@ -421,6 +463,7 @@ async function openOS(empId,osId){
   if(osId){const j=await api('GET','/api/admin/empresas/'+encodeURIComponent(empId));o=(j.ledger.ordens_de_servico||[]).find(x=>String(x.id)===String(osId))||{};}
   const c=o.creditos||{},eq=o.equipamento||{},eqp=o.equipe||{};
   OS_TL=Array.isArray(o.timeline)?JSON.parse(JSON.stringify(o.timeline)):[];
+  OS_FOTOS=Array.isArray(o.fotos)?JSON.parse(JSON.stringify(o.fotos)):[];
   showModal(osId?('Editar '+o.id):'Nova Ordem de Serviço',`
     <div class="field"><label>Título</label><input id="o_titulo" value="${esc(o.titulo||'')}" placeholder="Ex.: Manutenção do compressor"></div>
     <div class="row3">
@@ -451,8 +494,15 @@ async function openOS(empId,osId){
     <div class="sec-t">Timeline · marcos do atendimento (o cliente vê isto na OS)</div>
     <div id="tlBox"></div>
     <button class="btn sm ghost" style="margin-top:8px" onclick="tlAdd()">+ Adicionar marco</button>
+
+    <div class="sec-t">Fotos e anexos (a empresa vê na página da OS)</div>
+    <div id="fotoBox" class="foto-grid"></div>
+    <label class="btn sm ghost" style="margin-top:10px;display:inline-flex;align-items:center;gap:6px">+ Adicionar fotos
+      <input type="file" accept="image/*" multiple style="display:none" onchange="fotoAdd(this)">
+    </label>
+    <div class="up-hint">As imagens são reduzidas no navegador antes de salvar (máx. ~1400px, JPEG).</div>
   `,`${osId?`<button class="btn danger" onclick="delOS('${empId}','${esc(o.id)}')">Excluir</button>`:''}<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveOS('${empId}',${osId?JSON.stringify(o.id):'null'})">Salvar OS</button>`);
-  renderTL();
+  renderTL();renderFotos();
 }
 function renderTL(){
   $('tlBox').innerHTML=OS_TL.map((t,i)=>`
@@ -469,6 +519,41 @@ function renderTL(){
 function tlAdd(){OS_TL.push({data:new Date().toISOString().slice(0,10),hora:'',marco:'etapa',titulo:'',descricao:''});renderTL();}
 function tlDel(i){OS_TL.splice(i,1);renderTL();}
 
+/* ---------- fotos (redimensiona no navegador → data URI na própria OS) ---------- */
+function renderFotos(){
+  $('fotoBox').innerHTML=OS_FOTOS.length?OS_FOTOS.map((f,i)=>`
+    <div class="foto-item">
+      <img src="${esc(f.src)}" alt="" loading="lazy" onerror="this.onerror=null;this.src='${FOTO_PH}'">
+      <input value="${esc(f.titulo||'')}" placeholder="Legenda" onchange="OS_FOTOS[${i}].titulo=this.value">
+      <button class="foto-del" onclick="fotoDel(${i})" title="Remover foto">×</button>
+    </div>`).join(''):'<div class="empty-mini" style="text-align:left;padding:4px 0">Nenhuma foto ainda.</div>';
+}
+function fotoDel(i){OS_FOTOS.splice(i,1);renderFotos();}
+function fileToDataURL(file,maxDim=1400,quality=0.82){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{const img=new Image();img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>h&&w>maxDim){h=Math.round(h*maxDim/w);w=maxDim;}
+      else if(h>=w&&h>maxDim){w=Math.round(w*maxDim/h);h=maxDim;}
+      const c=document.createElement('canvas');c.width=w;c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      try{resolve(c.toDataURL('image/jpeg',quality));}catch(e){reject(e);}
+    };img.onerror=reject;img.src=fr.result;};
+    fr.onerror=reject;fr.readAsDataURL(file);
+  });
+}
+async function fotoAdd(input){
+  const files=[...(input.files||[])];
+  for(const f of files){
+    if(!f.type.startsWith('image/'))continue;
+    try{const src=await fileToDataURL(f);OS_FOTOS.push({titulo:(f.name.replace(/\.[^.]+$/,'')||'Foto').slice(0,48),src});}
+    catch(e){alert('Não consegui processar '+f.name);}
+  }
+  input.value='';
+  renderFotos();
+}
+
 async function saveOS(empId,osId){
   const body={
     titulo:val('o_titulo'),status:val('o_status'),prioridade:val('o_prio'),tipo:val('o_tipo'),
@@ -477,7 +562,7 @@ async function saveOS(empId,osId){
     local:val('o_local'),equipamento:{nome:val('o_equip')},
     equipe:{responsavel:val('o_resp'),horas_realizadas:Number(val('o_horas'))||0},
     descricao:val('o_desc'),diagnostico:val('o_diag'),observacoes:val('o_obs'),
-    timeline:OS_TL,
+    timeline:OS_TL,fotos:OS_FOTOS,
   };
   if(!body.titulo){alert('Informe o título da OS.');return;}
   try{
@@ -490,6 +575,130 @@ async function delOS(empId,osId){
   if(!confirm('Excluir a OS '+osId+'? Esta ação não pode ser desfeita.'))return;
   try{await api('DELETE','/api/admin/empresas/'+encodeURIComponent(empId)+'/os/'+encodeURIComponent(osId));closeModal();toast('OS excluída.');await loadEmpresas(true);}catch(e){alert(e.message);}
 }
+
+/* ---------- Alertas de saldo (banner) ---------- */
+function renderAlertBanner(){
+  const el=$('alertBanner'); if(!el)return;
+  const baixos=EMPRESAS.filter(e=>e.alerta&&e.alerta!=='ok');
+  if(!baixos.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="alert-banner" onclick="showView('relatorios')">
+    <svg viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+    <span><b>${baixos.length}</b> empresa(s) precisam de recarga (saldo baixo/esgotado).</span>
+    <span class="go">Ver relatório →</span></div>`;
+}
+
+/* ---------- Relatórios ---------- */
+let REL=null;
+const TIPO_LBL={corretiva:'Corretiva',preventiva:'Preventiva',preditiva:'Preditiva',melhoria:'Melhoria',novo_projeto:'Novo projeto',instalacao:'Instalação',outros:'Outros'};
+function mesLabel(m){const[y,mm]=String(m).split('-');return mm?`${mm}/${y}`:m;}
+function showView(v){
+  $('tab-empresas').classList.toggle('active',v==='empresas');
+  $('tab-relatorios').classList.toggle('active',v==='relatorios');
+  $('viewEmpresas').style.display=v==='empresas'?'':'none';
+  $('viewRelatorios').style.display=v==='relatorios'?'':'none';
+  if(v==='relatorios')loadRelatorio();
+}
+async function loadRelatorio(){
+  const el=$('viewRelatorios');
+  el.innerHTML='<div class="panel"><div class="panel-b"><div class="muted">Carregando relatório…</div></div></div>';
+  try{const j=await api('GET','/api/admin/relatorio');REL=j.relatorio;renderRelatorio(REL);}
+  catch(e){el.innerHTML='<div class="panel"><div class="panel-b"><div class="muted">Erro ao carregar: '+esc(e.message)+'</div></div></div>';}
+}
+function barras(arr,fmt){
+  const max=Math.max(1,...arr.map(x=>x.valor||0));
+  return `<div class="bars">${arr.length?arr.map(x=>`<div class="bar-row"><span class="bl">${esc(x.tipo)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round((x.valor||0)/max*100)}%"></div></div><span class="bv">${fmt(x.valor)}${x.pct!=null?` · ${x.pct}%`:''}</span></div>`).join(''):'<div class="empty-mini">Sem dados.</div>'}</div>`;
+}
+function renderRelatorio(r){
+  const t=r.totais;
+  const kpi=(l,v,cls)=>`<div class="kpi ${cls||''}"><div class="kl">${l}</div><div class="kv num">${v}</div></div>`;
+  const serv=barras(r.consumo_por_servico,money);
+  const tipo=barras(r.consumo_por_tipo_os.map(x=>({...x,tipo:TIPO_LBL[x.tipo]||x.tipo})),money);
+  const mes=barras(r.por_mes.map(x=>({tipo:mesLabel(x.mes),valor:x.valor})),money);
+  const maxR=Math.max(1,...r.ranking.map(x=>x.utilizado||0));
+  const rank=r.ranking.slice(0,10).map(x=>`<div class="bar-row"><span class="bl">${esc(x.nome)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round((x.utilizado||0)/maxR*100)}%"></div></div><span class="bv">${money(x.utilizado)}</span></div>`).join('')||'<div class="empty-mini">Sem consumo.</div>';
+  const alertas=r.alertas.length?r.alertas.map(a=>`<div class="bar-row" style="grid-template-columns:1fr auto"><span class="bl" style="color:var(--ink)">${esc(a.nome)} <span class="selo ${a.alerta}">${a.alerta==='esgotado'?'Esgotado':'Baixo'}</span></span><span class="bv">${money(a.disponivel)}</span></div>`).join(''):'<div class="empty-mini">Nenhuma empresa com saldo baixo. 🎉</div>';
+  $('viewRelatorios').innerHTML=`
+    <div class="rep-head">
+      <h2>Relatórios · visão geral</h2>
+      <div class="rep-actions"><button class="btn sm ghost" onclick="exportRelatorioCSV()">Exportar CSV</button><button class="btn sm" onclick="exportRelatorioPDF()">Exportar PDF</button></div>
+    </div>
+    <section class="overview" style="grid-template-columns:repeat(4,1fr)">
+      ${kpi('Créditos vendidos',money(t.depositado))}
+      ${kpi('Utilizado',money(t.utilizado),'util')}
+      ${kpi('Reservado',money(t.reservado),'res')}
+      ${kpi('Disponível (passivo)',money(t.disponivel),'disp')}
+    </section>
+    <section class="overview" style="grid-template-columns:repeat(3,1fr);margin-top:14px">
+      ${kpi('Empresas',t.empresas)}
+      ${kpi('Ordens de serviço',t.os)}
+      ${kpi('Horas realizadas',t.horas+' h')}
+    </section>
+    <div class="rep-grid" style="margin-top:20px">
+      <div class="panel"><div class="panel-h"><h2>Consumo por serviço</h2></div><div class="panel-b">${serv}</div></div>
+      <div class="panel"><div class="panel-h"><h2>Consumo por tipo de OS</h2></div><div class="panel-b">${tipo}</div></div>
+      <div class="panel"><div class="panel-h"><h2>Consumo por mês</h2></div><div class="panel-b">${mes}</div></div>
+      <div class="panel"><div class="panel-h"><h2>Ranking de empresas (consumo)</h2></div><div class="panel-b"><div class="bars">${rank}</div></div></div>
+    </div>
+    <div class="panel" style="margin-top:18px"><div class="panel-h"><h2>Empresas com saldo baixo</h2></div><div class="panel-b"><div class="bars">${alertas}</div></div></div>`;
+}
+function csvEsc(v){const s=String(v==null?'':v);return /[";\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}
+function exportRelatorioCSV(){
+  if(!REL)return;
+  const sep=';';let out='ORDENS DE SERVIÇO\n'+['Empresa','OS','Título','Status','Tipo','Categoria','Abertura','Conclusão','Previsto','Realizado'].join(sep)+'\n';
+  REL.os_rows.forEach(r=>out+=[r.empresa,r.os_id,r.titulo,r.status,r.tipo,r.categoria,r.abertura,r.conclusao,r.previsto,r.realizado].map(csvEsc).join(sep)+'\n');
+  out+='\nRECARGAS\n'+['Empresa','Data','Valor','Descrição'].join(sep)+'\n';
+  REL.recarga_rows.forEach(r=>out+=[r.empresa,r.data,r.valor,r.descricao].map(csvEsc).join(sep)+'\n');
+  const blob=new Blob(['﻿'+out],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='relatorio-expertwork.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);
+  toast('CSV exportado.');
+}
+function exportRelatorioPDF(){
+  if(!REL)return;const r=REL,t=r.totais;
+  const row=(a,b)=>`<tr><td class="k">${a}</td><td style="text-align:right">${b}</td></tr>`;
+  const bl=(arr,fmt)=>arr.length?`<table>${arr.map(x=>`<tr><td>${esc(TIPO_LBL[x.tipo]||x.tipo)}</td><td style="text-align:right">${fmt(x.valor)}${x.pct!=null?` · ${x.pct}%`:''}</td></tr>`).join('')}</table>`:'<p class="muted">Sem dados.</p>';
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório Expert Work</title><style>
+    *{box-sizing:border-box}body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0C1B2E;margin:0;padding:34px;font-size:12.5px;line-height:1.5}
+    .hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1565C0;padding-bottom:14px;margin-bottom:16px}
+    .wm{font-weight:800;font-size:21px;letter-spacing:-.5px}.wm b{color:#1565C0}.hd .r{text-align:right;font-size:11px;color:#5b6b7e}
+    h1{font-size:18px;margin:0 0 12px}h2{font-size:13px;color:#0D47A1;border-bottom:1px solid #dce5f0;padding-bottom:5px;margin:18px 0 8px}
+    table{width:100%;border-collapse:collapse;margin:6px 0}td{padding:6px 9px;border:1px solid #dce5f0}td.k{background:#f2f7fc;font-weight:700;width:60%}
+    .kpis{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0}.kc{border:1px solid #dce5f0;border-radius:8px;padding:9px 12px;min-width:150px}.kc .l{font-size:10px;color:#5b6b7e;text-transform:uppercase}.kc .v{font-size:16px;font-weight:800}
+    .muted{color:#8092a6}.foot{margin-top:24px;border-top:1px solid #dce5f0;padding-top:10px;font-size:10px;color:#8092a6;text-align:center}
+  </style></head><body>
+    <div class="hd"><div class="wm">EXPERT <b>WORK</b></div><div class="r">Relatório consolidado · Celiware<br>Emitido em ${new Date().toLocaleString('pt-BR')}</div></div>
+    <h1>Visão geral</h1>
+    <div class="kpis">
+      <div class="kc"><div class="l">Créditos vendidos</div><div class="v">${money(t.depositado)}</div></div>
+      <div class="kc"><div class="l">Utilizado</div><div class="v">${money(t.utilizado)}</div></div>
+      <div class="kc"><div class="l">Reservado</div><div class="v">${money(t.reservado)}</div></div>
+      <div class="kc"><div class="l">Disponível (passivo)</div><div class="v">${money(t.disponivel)}</div></div>
+      <div class="kc"><div class="l">Empresas</div><div class="v">${t.empresas}</div></div>
+      <div class="kc"><div class="l">Ordens de serviço</div><div class="v">${t.os}</div></div>
+    </div>
+    <h2>Consumo por serviço</h2>${bl(r.consumo_por_servico,money)}
+    <h2>Consumo por tipo de OS</h2>${bl(r.consumo_por_tipo_os,money)}
+    <h2>Consumo por mês</h2>${r.por_mes.length?`<table>${r.por_mes.map(x=>`<tr><td>${mesLabel(x.mes)}</td><td style="text-align:right">${money(x.valor)}</td></tr>`).join('')}</table>`:'<p class="muted">Sem dados.</p>'}
+    <h2>Ranking de empresas (consumo)</h2><table>${r.ranking.map(x=>`<tr><td>${esc(x.nome)}</td><td style="text-align:right">${money(x.utilizado)}</td></tr>`).join('')}</table>
+    <h2>Empresas com saldo baixo</h2>${r.alertas.length?`<table>${r.alertas.map(a=>`<tr><td>${esc(a.nome)} (${a.alerta})</td><td style="text-align:right">${money(a.disponivel)}</td></tr>`).join('')}</table>`:'<p class="muted">Nenhuma.</p>'}
+    <div class="foot">Expert Work · Celiware — relatório gerado pelo painel administrativo.</div>
+  </body></html>`;
+  const w=window.open('','_blank');if(!w){alert('Permita pop-ups para exportar o PDF.');return;}
+  w.document.write(html);w.document.close();w.focus();setTimeout(()=>{try{w.print();}catch(e){}},500);
+}
+
+/* Sessão persistente do admin: relogin automático com token salvo. */
+(async function restaurarAdmin(){
+  let t=null; try{t=localStorage.getItem('ew_admin_token');}catch(e){}
+  if(!t)return;
+  TOKEN=t;
+  try{
+    const j=await api('GET','/api/admin/empresas');
+    try{ADMIN=JSON.parse(localStorage.getItem('ew_admin')||'{}');}catch(e){ADMIN={};}
+    $('login').style.display='none';$('app').style.display='flex';
+    $('admName').textContent=ADMIN.nome||'';$('admAv').textContent=initials(ADMIN.nome||'CW');
+    EMPRESAS=j.empresas||[];renderOverview();renderEmpList();
+  }catch(e){TOKEN=null;try{localStorage.removeItem('ew_admin_token');}catch(_){}}
+})();
 </script>
 </body>
 </html>

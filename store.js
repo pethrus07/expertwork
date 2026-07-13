@@ -89,7 +89,7 @@ function readBody(req) {
     let body = '';
     req.on('data', chunk => {
       body += chunk;
-      if (body.length > 5_000_000) { // OS com timeline/apontamentos podem ser grandes
+      if (body.length > 20_000_000) { // OS podem carregar fotos (data URI) além de timeline/apontamentos
         req.destroy();
         reject(new Error('Payload muito grande.'));
       }

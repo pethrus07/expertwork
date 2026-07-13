@@ -1,5 +1,10 @@
 {
   "moeda": "BRL",
   "versaoApi": "1.0",
-  "reservaStatuses": ["aberta", "em_andamento"]
+  "reservaStatuses": ["aberta", "em_andamento"],
+  "alertaSaldoBaixoPct": 12,
+  "contato": {
+    "whatsapp": "5511989173876",
+    "mensagem_padrao": "Olá! Gostaria de solicitar uma nova Ordem de Serviço."
+  }
 }

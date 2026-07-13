@@ -138,6 +138,39 @@ function periodoReferencia(oss) {
   };
 }
 
+// Histórico de recargas (tela "Histórico de Recargas"), do mais antigo p/ o novo.
+function historicoRecargas(ledger) {
+  const recargas = Array.isArray(ledger.recargas) ? ledger.recargas : [];
+  return recargas.slice()
+    .sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')))
+    .map(r => ({ data: r.data || null, valor: n(r.valor), descricao: r.descricao || 'Recarga' }));
+}
+
+// Extrato de créditos (tela "Extrato"): recargas (+) e consumo das OS concluídas
+// (−), em ordem cronológica, com o saldo corrente após cada movimentação.
+function extratoCreditos(ledger) {
+  const recargas = Array.isArray(ledger.recargas) ? ledger.recargas : [];
+  const oss = Array.isArray(ledger.ordens_de_servico) ? ledger.ordens_de_servico : [];
+  const movs = [];
+  for (const r of recargas) {
+    movs.push({ tipo_movimentacao: 'recarga', valor: n(r.valor), descricao: r.descricao || 'Recarga de créditos', data: r.data || null, _ord: 0 });
+  }
+  for (const o of oss) {
+    if (o.status !== 'concluida') continue;
+    const v = n(o.creditos && o.creditos.realizado);
+    if (v <= 0) continue;
+    movs.push({ tipo_movimentacao: 'consumo', valor: v, descricao: o.titulo || 'Ordem de serviço', os_id: o.id, data: o.data_conclusao || o.data_abertura || null, _ord: 1 });
+  }
+  movs.sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')) || (a._ord - b._ord));
+  let saldo = 0;
+  for (const m of movs) {
+    saldo += m.tipo_movimentacao === 'recarga' ? m.valor : -m.valor;
+    m.saldo_posterior = saldo;
+    delete m._ord;
+  }
+  return movs;
+}
+
 /* Monta o objeto `dashboard` exatamente no formato que o front do cliente
    (index.html) já consome — só que com os números derivados do ledger. */
 function montarDashboard(empresa, ledger, cfg) {
@@ -149,6 +182,9 @@ function montarDashboard(empresa, ledger, cfg) {
     graficos: graficos(oss),
     agendamentos_proximos: agendamentosProximos(oss),
     ordens_de_servico: oss,
+    historico_recargas: historicoRecargas(ledger),
+    extrato_creditos: extratoCreditos(ledger),
+    contato: (cfg && cfg.contato) || {},
     metadata: {
       periodo_referencia: periodoReferencia(oss),
       gerado_em: new Date().toISOString(),
@@ -157,10 +193,20 @@ function montarDashboard(empresa, ledger, cfg) {
   };
 }
 
+// Classifica o saldo de uma empresa para os alertas do admin.
+function alertaSaldo(cr, cfg) {
+  const dep = Number(cr.total_depositado) || 0;
+  const disp = Number(cr.total_disponivel) || 0;
+  const limiar = ((cfg && cfg.alertaSaldoBaixoPct) || 12) / 100;
+  const pct = dep > 0 ? disp / dep : (disp > 0 ? 1 : 0);
+  return disp <= 0 ? 'esgotado' : (pct < limiar ? 'baixo' : 'ok');
+}
+
 module.exports = {
   montarDashboard,
   creditosDerivados,
   resumoOS,
   graficos,
+  alertaSaldo,
   RESERVA_STATUS,
 };

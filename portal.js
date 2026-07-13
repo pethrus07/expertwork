@@ -11,7 +11,8 @@ const {
 } = require('./store');
 const { montarDashboard } = require('./credito');
 
-const sessions = new Map(); // token -> { tenantId, criadoEm }
+const sessions = require('./sessions').portal; // persistente (sobrevive a restart)
+const COOKIE = token => `ew_sess=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800`;
 
 function criarSessao(tenantId) {
   const token = crypto.randomBytes(24).toString('hex');
@@ -89,7 +90,7 @@ async function handlePortalApi(req, res, pathname) {
         return;
       }
       const token = criarSessao(emp.id);
-      res.setHeader('Set-Cookie', `ew_sess=${token}; Path=/; HttpOnly; SameSite=Strict`);
+      res.setHeader('Set-Cookie', COOKIE(token));
       sendJson(res, 200, { status: 1, token, ...(await payloadEmpresa(emp)) });
     } catch (err) {
       sendJson(res, 400, { status: 0, message: err.message || 'Falha no login.' });
@@ -101,6 +102,8 @@ async function handlePortalApi(req, res, pathname) {
   if (pathname === '/api/portal' && req.method === 'GET') {
     const emp = await empresaLogada(req, res);
     if (!emp) return;
+    const tok = getToken(req);
+    if (tok) res.setHeader('Set-Cookie', COOKIE(tok)); // reestabelece o cookie após restore por token
     sendJson(res, 200, { status: 1, ...(await payloadEmpresa(emp)) });
     return;
   }

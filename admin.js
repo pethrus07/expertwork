@@ -11,7 +11,7 @@ const {
   readTenants, writeTenants, readLedger, writeLedger, readConfig,
   hashSenha, verificarSenha, idSeguro,
 } = require('./store');
-const { creditosDerivados } = require('./credito');
+const { creditosDerivados, alertaSaldo } = require('./credito');
 
 // Admins internos da Celiware. EM PRODUÇÃO defina as senhas por variável de
 // ambiente (ADMIN_PASS_*). Os valores abaixo são só para demonstração local.
@@ -20,7 +20,7 @@ const admins = [
   { id: 'adm-celiware', login: 'admin', nome: 'Admin Celiware', senha: process.env.ADMIN_PASS_ADMIN || 'admin1234' },
 ];
 
-const sessions = new Map(); // token -> { adminId, login, nome }
+const sessions = require('./sessions').admin; // persistente (sobrevive a restart)
 
 function criarSessao(a) {
   const token = crypto.randomBytes(24).toString('hex');
@@ -75,7 +75,77 @@ async function resumoEmpresa(emp, cfg) {
       reservado: cr.saldo_reservado,
       moeda: cr.moeda,
     },
+    alerta: alertaSaldo(cr, cfg),
     totalOS: (ledger.ordens_de_servico || []).length,
+  };
+}
+
+// Relatório consolidado de TODAS as empresas (visão da Celiware).
+async function montarRelatorio(cfg) {
+  const db = await readTenants();
+  const totais = { depositado: 0, utilizado: 0, reservado: 0, disponivel: 0, empresas: db.empresas.length, os: 0, horas: 0 };
+  const porStatus = { solicitada: 0, aberta: 0, em_andamento: 0, concluida: 0, cancelada: 0 };
+  const servMap = new Map(), tipoMap = new Map(), mesMap = new Map();
+  const ranking = [], alertas = [], os_rows = [], recarga_rows = [];
+
+  for (const emp of db.empresas) {
+    const ledger = await readLedger(emp.id);
+    const cr = creditosDerivados(ledger, cfg);
+    totais.depositado += cr.total_depositado;
+    totais.utilizado += cr.total_utilizado;
+    totais.reservado += cr.saldo_reservado;
+    totais.disponivel += cr.total_disponivel;
+    const oss = ledger.ordens_de_servico || [];
+    totais.os += oss.length;
+    const nome = (emp.empresa && emp.empresa.nome) || emp.login;
+
+    for (const o of oss) {
+      if (porStatus[o.status] === undefined) porStatus[o.status] = 0;
+      porStatus[o.status]++;
+      totais.horas += Number(o.equipe && o.equipe.horas_realizadas) || 0;
+      os_rows.push({
+        empresa: nome, os_id: o.id, titulo: o.titulo || '', status: o.status,
+        tipo: o.tipo || '', categoria: o.categoria || (o.equipe && o.equipe.area) || '',
+        abertura: o.data_abertura || '', conclusao: o.data_conclusao || '',
+        previsto: Number(o.creditos && o.creditos.previsto) || 0,
+        realizado: Number(o.creditos && o.creditos.realizado) || 0,
+      });
+      if (o.status === 'concluida') {
+        const v = Number(o.creditos && o.creditos.realizado) || 0;
+        const cat = o.categoria || (o.equipe && o.equipe.area) || 'Outros';
+        servMap.set(cat, (servMap.get(cat) || 0) + v);
+        const tp = o.tipo || 'outros';
+        tipoMap.set(tp, (tipoMap.get(tp) || 0) + v);
+        const mes = String(o.data_conclusao || o.data_abertura || '').slice(0, 7);
+        if (mes) mesMap.set(mes, (mesMap.get(mes) || 0) + v);
+      }
+    }
+    for (const r of (ledger.recargas || [])) {
+      recarga_rows.push({ empresa: nome, data: r.data || '', valor: Number(r.valor) || 0, descricao: r.descricao || '' });
+    }
+    ranking.push({ id: emp.id, nome, utilizado: cr.total_utilizado, disponivel: cr.total_disponivel, os: oss.length });
+    const al = alertaSaldo(cr, cfg);
+    if (al !== 'ok') alertas.push({ id: emp.id, nome, disponivel: cr.total_disponivel, alerta: al });
+  }
+
+  const toArr = map => {
+    const arr = [...map.entries()].map(([tipo, valor]) => ({ tipo, valor })).sort((a, b) => b.valor - a.valor);
+    const tot = arr.reduce((s, x) => s + x.valor, 0);
+    arr.forEach(x => { x.pct = tot > 0 ? Math.round((x.valor / tot) * 1000) / 10 : 0; });
+    return arr;
+  };
+  ranking.sort((a, b) => b.utilizado - a.utilizado);
+
+  return {
+    totais,
+    por_status: porStatus,
+    consumo_por_servico: toArr(servMap),
+    consumo_por_tipo_os: toArr(tipoMap),
+    por_mes: [...mesMap.entries()].map(([mes, valor]) => ({ mes, valor })).sort((a, b) => a.mes.localeCompare(b.mes)),
+    ranking,
+    alertas,
+    os_rows,
+    recarga_rows,
   };
 }
 
@@ -109,6 +179,13 @@ async function handleAdminApi(req, res, pathname) {
   if (!sess) return;
 
   try {
+    /* ---- RELATÓRIO consolidado ---- */
+    if (seg[0] === 'relatorio' && req.method === 'GET') {
+      const cfg = await readConfig();
+      sendJson(res, 200, { status: 1, relatorio: await montarRelatorio(cfg) });
+      return;
+    }
+
     /* ---- EMPRESAS ---- */
     if (seg[0] === 'empresas') {
       const cfg = await readConfig();

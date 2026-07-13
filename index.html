@@ -619,8 +619,37 @@
   </aside>
 
   <div class="main">
+    <style>
+      .bell-wrap{position:relative;margin-left:auto}
+      .bellbtn{position:relative;width:42px;height:42px;border-radius:12px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;color:var(--ink-2);cursor:pointer;transition:border-color .14s}
+      .bellbtn:hover{border-color:var(--primary)}
+      .bellbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2}
+      .bell-badge{position:absolute;top:-6px;right:-6px;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#EF4444;color:#fff;font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center}
+      .bell-badge.show{display:flex}
+      .notif-pop{position:absolute;right:0;top:52px;width:330px;max-width:84vw;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px rgba(12,27,46,.2);z-index:60;display:none;overflow:hidden}
+      .notif-pop.open{display:block}
+      .notif-h{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-bottom:1px solid var(--line);font-weight:700;font-size:13px}
+      .notif-h button{background:none;border:none;color:var(--primary);font-size:12px;font-weight:700;cursor:pointer}
+      .notif-list{max-height:340px;overflow:auto}
+      .notif-item{padding:11px 15px;border-bottom:1px solid var(--line);cursor:pointer}
+      .notif-item:last-child{border-bottom:none}
+      .notif-item:hover{background:#F5F9FE}
+      .notif-item .m{font-size:13px;font-weight:600;line-height:1.35}
+      .notif-item .d{font-size:12px;color:var(--ink-3);margin-top:2px}
+      .notif-empty{padding:26px 15px;text-align:center;color:var(--ink-3);font-size:13px}
+    </style>
     <header class="topbar">
       <div class="ttl"><h2 id="pageTitle">Dashboard</h2><p id="pageSub">Visão geral do contrato</p></div>
+      <div class="bell-wrap">
+        <button class="bellbtn" id="bellBtn" onclick="toggleNotif(event)" aria-label="Novidades">
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="bell-badge" id="bellBadge">0</span>
+        </button>
+        <div class="notif-pop" id="notifPop">
+          <div class="notif-h">Novidades <button onclick="marcarLidas()">Marcar como lidas</button></div>
+          <div class="notif-list" id="notifList"></div>
+        </div>
+      </div>
       <div class="company"><div class="av" id="companyAv">—</div><div><div class="nm" id="companyName">—</div><div class="sg" id="companySeg">—</div></div></div>
     </header>
     <div class="content" id="content"></div>
@@ -977,7 +1006,10 @@ function viewOS(os){
   const solic=(os.solicitante&&os.solicitante.nome)||'—';
   const chipsHtml=`<span class="metachip"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><span>Responsável: ${resp}</span></span><span class="metachip"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Solicitante: ${solic}</span></span>`;
   return `
-  <button class="back" onclick="go('oslist')"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"/></svg>Voltar às ordens</button>
+  <div style="display:flex;gap:9px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <button class="back" style="margin-bottom:0" onclick="go('oslist')"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"/></svg>Voltar às ordens</button>
+    <button class="back" style="margin-bottom:0" onclick="exportarOSPDF('${os.id}')"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>Exportar PDF</button>
+  </div>
   <div class="card">
     <div class="dhead" style="--osbg:${bg};--osfg:${fg}">
       <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">${osIcon(os.tipo)}</svg></div>
@@ -999,6 +1031,63 @@ function viewOS(os){
     ${osFotos(os)}
   </div>
   ${osConclusao(os)}`;
+}
+
+/* ----- Exportar OS em PDF (janela imprimível → "Salvar como PDF") ----- */
+function exportarOSPDF(osId){
+  const os=D.ordens_de_servico.find(o=>String(o.id)===String(osId));
+  if(!os)return;
+  const emp=D.empresa||{}, c=os.creditos||{}, e=os.equipe||{};
+  const cur=(D.creditos&&D.creditos.moeda)||'BRL';
+  const m0=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:cur});
+  const e0=s=>String(s??'').replace(/[&<>]/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[x]));
+  const ST={solicitada:'Solicitada',aberta:'Aberta',em_andamento:'Em andamento',concluida:'Concluída',cancelada:'Cancelada'};
+  const PR={alta:'Alta',media:'Média',baixa:'Baixa'};
+  const li=(arr,f)=>(arr&&arr.length)?arr.map(f).join(''):'';
+  const serv=li(os.servico_executado,s=>`<li>${e0(s)}</li>`);
+  const mats=li(os.materiais,x=>`<li>${e0(x.item||'')} — ${e0(x.quantidade||'')} ${e0(x.unidade||'')}</li>`);
+  const profs=li(e.profissionais,p=>`<li>${e0(p.nome||'')} — ${e0(p.funcao||'')}${p.horas?` (${p.horas}h)`:''}</li>`);
+  const tl=li(os.timeline,t=>`<div class="tl"><b>${e0(t.titulo||'')}</b> <span>${e0(fmtDate(t.data))}${t.hora?' · '+e0(t.hora):''}</span><div>${e0(t.descricao||'')}</div></div>`);
+  const fotos=li(os.fotos,f=>`<figure><img src="${e0(f.src)}"><figcaption>${e0(f.titulo||'')}</figcaption></figure>`);
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${e0(os.id)} — ${e0(os.titulo||'')}</title><style>
+    *{box-sizing:border-box}body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#0C1B2E;margin:0;padding:34px;font-size:12.5px;line-height:1.55}
+    .hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1565C0;padding-bottom:14px;margin-bottom:18px}
+    .wm{font-weight:800;font-size:21px;letter-spacing:-.5px}.wm b{color:#1565C0}
+    .hd .r{text-align:right;font-size:11px;color:#5b6b7e;line-height:1.5}
+    h1{font-size:18px;margin:0 0 3px}.sub{color:#5b6b7e;font-size:12px;margin-bottom:12px}
+    .pills span{display:inline-block;border:1px solid #cdd8e6;border-radius:6px;padding:3px 9px;font-size:11px;margin:0 6px 6px 0}
+    table{width:100%;border-collapse:collapse;margin:10px 0 6px}td{padding:7px 9px;border:1px solid #dce5f0;vertical-align:top}td.k{background:#f2f7fc;font-weight:700;width:34%}
+    h2{font-size:13px;border-bottom:1px solid #dce5f0;padding-bottom:5px;margin:20px 0 8px;color:#0D47A1}
+    ul{margin:6px 0;padding-left:18px}.tl{padding:8px 0;border-bottom:1px solid #eef2f9}.tl span{color:#5b6b7e;font-size:11px}
+    .fotos{display:flex;flex-wrap:wrap;gap:10px}figure{margin:0;width:31.5%}figure img{width:100%;border:1px solid #dce5f0;border-radius:6px}figcaption{font-size:10px;color:#5b6b7e;margin-top:3px}
+    .foot{margin-top:26px;border-top:1px solid #dce5f0;padding-top:10px;font-size:10px;color:#8092a6;text-align:center}
+    @media print{body{padding:6px}}
+  </style></head><body>
+    <div class="hd"><div class="wm">EXPERT <b>WORK</b></div><div class="r"><b>${e0(emp.nome||'')}</b><br>${e0(emp.cnpj||'')}<br>Emitido em ${new Date().toLocaleDateString('pt-BR')}</div></div>
+    <h1>${e0(os.id)} · ${e0(os.titulo||'')}</h1>
+    <div class="sub">${e0(TIPO[os.tipo]||os.tipo||'')}</div>
+    <div class="pills"><span>Status: ${ST[os.status]||e0(os.status)}</span><span>Prioridade: ${PR[os.prioridade]||e0(os.prioridade)}</span><span>Abertura: ${e0(fmtDate(os.data_abertura))}</span>${os.data_conclusao?`<span>Conclusão: ${e0(fmtDate(os.data_conclusao))}</span>`:''}</div>
+    <table>
+      <tr><td class="k">Local / Equipamento</td><td>${e0(os.local||'—')} — ${e0((os.equipamento&&os.equipamento.nome)||'—')}</td></tr>
+      <tr><td class="k">Responsável</td><td>${e0(e.responsavel||'—')}</td></tr>
+      <tr><td class="k">Horas realizadas</td><td>${e.horas_realizadas||0} h${e.horas_previstas?` (previstas ${e.horas_previstas} h)`:''}</td></tr>
+      <tr><td class="k">Crédito previsto</td><td>${m0(c.previsto)}</td></tr>
+      <tr><td class="k">Crédito realizado</td><td>${m0(c.realizado)}</td></tr>
+    </table>
+    ${os.descricao?`<h2>Descrição</h2><p>${e0(os.descricao)}</p>`:''}
+    ${os.diagnostico?`<h2>Diagnóstico</h2><p>${e0(os.diagnostico)}</p>`:''}
+    ${serv?`<h2>Serviço executado</h2><ul>${serv}</ul>`:''}
+    ${mats?`<h2>Materiais</h2><ul>${mats}</ul>`:''}
+    ${profs?`<h2>Equipe</h2><ul>${profs}</ul>`:''}
+    ${tl?`<h2>Timeline</h2>${tl}`:''}
+    ${os.observacoes?`<h2>Observações</h2><p>${e0(os.observacoes)}</p>`:''}
+    ${fotos?`<h2>Fotos e anexos</h2><div class="fotos">${fotos}</div>`:''}
+    <div class="foot">Expert Work · Celiware — documento gerado pelo portal de créditos em ${new Date().toLocaleString('pt-BR')}.</div>
+  </body></html>`;
+  const w=window.open('','_blank');
+  if(!w){alert('Permita pop-ups para exportar o PDF.');return;}
+  w.document.write(html);w.document.close();w.focus();
+  setTimeout(()=>{try{w.print();}catch(e){}},500);
 }
 
 /* ----- KPIs ----- */
@@ -1242,7 +1331,7 @@ async function doLogin(){
     const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:u,senha:p})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok||j.status!==1||!j.dashboard){ showLoginErr(j.message||'Usuário ou senha inválidos.'); return; }
-    TOKEN=j.token; D=j.dashboard;
+    TOKEN=j.token; D=j.dashboard; try{localStorage.setItem('ew_token',TOKEN);}catch(e){}
     document.getElementById('loginErr').classList.remove('show');
     document.getElementById('login').style.display='none';
     document.getElementById('appShell').style.display='flex';
@@ -1262,7 +1351,7 @@ function showLoginErr(msg){
 }
 function logout(){
   if(TOKEN){fetch('/api/logout',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN}}).catch(()=>{});}
-  TOKEN=null;
+  TOKEN=null; try{localStorage.removeItem('ew_token');}catch(e){}
   if(chartServico){chartServico.destroy();chartServico=null;}
   if(chartTipo){chartTipo.destroy();chartTipo=null;}
   D=null;current='dashboard';
@@ -1282,13 +1371,58 @@ function boot(){
   document.getElementById('companySeg').textContent=e.segmento+' · '+e.cnpj;
   const pr=D.metadata.periodo_referencia;
   document.getElementById('footMeta').innerHTML=`Período ${fmtDate(pr.inicio)} – ${fmtDate(pr.fim)}<br>Atualizado ${fmtDateTime(D.metadata.gerado_em)} · v${D.metadata.versao_api}`;
+  computeNotifs();
   go('dashboard');
 }
+
+/* ---------- Notificações do cliente (sino) ---------- */
+function escN(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function stName(s){return ({solicitada:'Solicitada',aberta:'Aberta',em_andamento:'Em andamento',concluida:'Concluída',cancelada:'Cancelada'}[s]||s);}
+let NOTIFS=[],NOTIF_SNAP=null,NOTIF_KEY=null;
+function computeNotifs(){
+  if(!D)return;
+  NOTIF_KEY='ew_seen_'+((D.empresa&&(D.empresa.id||D.empresa.nome))||'x');
+  const cur={};(D.ordens_de_servico||[]).forEach(o=>cur[o.id]=o.status);
+  const dep=(D.creditos&&D.creditos.total_depositado)||0, disp=(D.creditos&&D.creditos.total_disponivel)||0;
+  const low=dep>0?(disp/dep)<0.12:(disp<=0);
+  let prev=null;try{const r=localStorage.getItem(NOTIF_KEY);if(r)prev=JSON.parse(r);}catch(e){}
+  NOTIFS=[];
+  if(prev){
+    for(const o of (D.ordens_de_servico||[])){
+      const ps=prev.status?prev.status[o.id]:undefined;
+      if(ps===undefined)NOTIFS.push({m:'Nova OS '+o.id,d:o.titulo||'',os:o.id});
+      else if(ps!==o.status)NOTIFS.push({m:o.id+': '+stName(ps)+' → '+stName(o.status),d:o.titulo||'',os:o.id});
+    }
+    if(low&&!prev.low)NOTIFS.push({m:'Saldo baixo',d:'Seu crédito disponível está baixo. Fale com a Celiware.'});
+  }
+  NOTIF_SNAP={status:cur,low};
+  if(!prev){try{localStorage.setItem(NOTIF_KEY,JSON.stringify(NOTIF_SNAP));}catch(e){}}
+  renderNotifBadge();
+}
+function renderNotifBadge(){const b=document.getElementById('bellBadge');if(!b)return;if(NOTIFS.length){b.textContent=NOTIFS.length>9?'9+':String(NOTIFS.length);b.classList.add('show');}else b.classList.remove('show');}
+function toggleNotif(ev){if(ev)ev.stopPropagation();const p=document.getElementById('notifPop');if(!p)return;const open=p.classList.toggle('open');if(open)renderNotifList();}
+function renderNotifList(){const el=document.getElementById('notifList');if(!el)return;el.innerHTML=NOTIFS.length?NOTIFS.map(n=>`<div class="notif-item" ${n.os?`onclick="document.getElementById('notifPop').classList.remove('open');go('os','${n.os}')"`:''}><div class="m">${escN(n.m)}</div><div class="d">${escN(n.d)}</div></div>`).join(''):'<div class="notif-empty">Sem novidades.</div>';}
+function marcarLidas(){try{localStorage.setItem(NOTIF_KEY,JSON.stringify(NOTIF_SNAP));}catch(e){}NOTIFS=[];renderNotifBadge();renderNotifList();const p=document.getElementById('notifPop');if(p)p.classList.remove('open');}
+document.addEventListener('click',e=>{const p=document.getElementById('notifPop');if(p&&p.classList.contains('open')&&!e.target.closest('.bell-wrap'))p.classList.remove('open');});
 // tabbar começa oculto até login
 document.getElementById('tabbar').style.display='none';
 
-// Os dados agora vêm da API no login (/api/login) — nada é pré-carregado,
-// e o navegador nunca recebe o tenants.json.
+// Sessão persistente: com token salvo, restaura direto no app (sem novo login).
+(async function restaurarSessao(){
+  let t=null; try{t=localStorage.getItem('ew_token');}catch(e){}
+  if(!t)return;
+  try{
+    const r=await fetch('/api/portal',{headers:{'Authorization':'Bearer '+t}});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    if(j.status!==1||!j.dashboard)throw 0;
+    TOKEN=t;D=j.dashboard;
+    document.getElementById('login').style.display='none';
+    document.getElementById('appShell').style.display='flex';
+    document.getElementById('tabbar').style.display='';
+    boot();
+  }catch(e){try{localStorage.removeItem('ew_token');}catch(_){}}
+})();
 </script>
 </body>
 </html>

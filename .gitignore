@@ -6,6 +6,7 @@ node_modules/
 tenants.json
 dados/
 fotos/
+.sessions.json
 
 # Sistema / editor
 .DS_Store

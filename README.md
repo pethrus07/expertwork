@@ -23,6 +23,8 @@ Este projeto **nasceu como uma demonstração estática** — um `portal-credito
 **Quem usa, e para quê?**
 As **empresas** acessam para ver quanto têm, onde e como o crédito foi gasto, e o detalhe de cada OS (equipe, apontamentos, timeline, fotos). A **Celiware** acessa o painel admin para cadastrar recargas, abrir/editar OS de qualquer empresa e digitar a timeline — é por ali que todo o dado nasce.
 
+**Também inclui:** exportação de OS e de **relatório consolidado em PDF**, **exportação CSV**, gráficos de consumo, **alertas de saldo baixo** para a Celiware, **notificações** ao cliente (mudança de status de OS e saldo baixo) e **sessões persistentes** — reiniciar o servidor não desloga ninguém, e o navegador reloga sozinho.
+
 ---
 
 ## 2. Arquitetura e Decisões Técnicas
@@ -123,6 +125,7 @@ Autenticação por header `Authorization: Bearer <token>` (obtido no login).
 | `/api/admin/empresas/:id/recargas` | POST | admin | Adiciona crédito |
 | `/api/admin/empresas/:id/os` | POST | admin | Abre/cadastra OS |
 | `/api/admin/empresas/:id/os/:osId` | PUT/DELETE | admin | Edita / exclui OS |
+| `/api/admin/relatorio` | GET | admin | Relatório consolidado (KPIs, consumo, ranking, alertas) |
 
 ---
 
@@ -146,9 +149,9 @@ Host que rode **Node 18+ como processo** com **disco gravável e persistente** (
 
 ## 9. Roadmap (v2)
 
-- Sessão/auth persistente (hoje cai no restart do servidor).
 - Logo próprio da Expert Work (hoje usa o wordmark tipográfico).
-- Upload de fotos de OS pelo painel admin.
+- Fotos das OS são embutidas como data URI (redimensionadas no navegador) — migrar para armazenamento de objetos (disco/S3/R2) quando o volume crescer.
+- Notificações por e-mail/WhatsApp (hoje o aviso é um sino dentro do portal).
 - Migração opcional dos JSON para um banco (SQLite/D1) mantendo a mesma API.
 
 ---

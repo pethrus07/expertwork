@@ -1,0 +1,5 @@
+{
+  "moeda": "BRL",
+  "versaoApi": "1.0",
+  "reservaStatuses": ["aberta", "em_andamento"]
+}

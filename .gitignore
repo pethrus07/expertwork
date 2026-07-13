@@ -1,0 +1,13 @@
+# Dependências
+node_modules/
+
+# Dados mutáveis — contas de clientes + Ordens de Serviço reais (nome, CNPJ,
+# fotos). Ficam FORA do git por LGPD. Gerados pelo `npm run seed` / `npm run migrar`.
+tenants.json
+dados/
+fotos/
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+*.log

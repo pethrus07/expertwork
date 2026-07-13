@@ -1,0 +1,14 @@
+{
+  "name": "expertwork",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Expert Work — portal de créditos multi-tenant da Celiware. Cada empresa acompanha saldo e Ordens de Serviço; a Celiware administra tudo pelo painel admin. Node puro, sem dependências, dados em JSON. Mesma arquitetura do IndustriAlly.",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "migrar": "node migrar.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

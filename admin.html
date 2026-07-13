@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expert Work · Admin Celiware</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --primary:#1565C0; --primary-2:#1E78D6; --primary-3:#0D47A1;
+    --navy:#0E2E54; --navy-2:#123F6E;
+    --ink:#0C1B2E; --ink-2:#3D556F; --ink-3:#6B819A;
+    --bg:#EEF3FA; --card:#FFFFFF; --line:#DCE5F0; --line-2:#EDF2F9;
+    --ok:#0C7F63; --ok-bg:#E0F3EC; --warn:#B4460A; --warn-bg:#FBEEE2; --danger:#C0392B;
+    --r:16px; --r-sm:11px;
+    --sh:0 1px 2px rgba(12,27,46,.05),0 6px 20px rgba(12,27,46,.06);
+    --sh-lg:0 20px 50px rgba(12,27,46,.14);
+    --font:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --disp:'Space Grotesk',var(--font);
+    --mono:ui-monospace,"Cascadia Code","Consolas",monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer;border:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:14px;width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:var(--r-sm);background:#FBFCFE;color:var(--ink);transition:border-color .14s,box-shadow .14s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary-2);box-shadow:0 0 0 3px rgba(21,101,192,.13)}
+  :focus-visible{outline:2px solid var(--primary-2);outline-offset:2px;border-radius:6px}
+  label{display:block;font-size:12px;font-weight:700;color:var(--ink-2);margin:0 0 6px}
+  .num{font-variant-numeric:tabular-nums}
+  .btn{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;font-weight:700;padding:11px 18px;border-radius:var(--r-sm);font-size:14px;box-shadow:0 4px 12px rgba(21,101,192,.25);transition:filter .12s,transform .1s,box-shadow .12s;white-space:nowrap}
+  .btn:hover{filter:brightness(1.07)} .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:#fff;color:var(--primary);border:1px solid var(--line);box-shadow:var(--sh)}
+  .btn.ghost:hover{border-color:var(--primary-2);filter:none;background:#F7FAFE}
+  .btn.sm{padding:8px 13px;font-size:13px}
+  .btn.danger{background:#fff;color:var(--danger);border:1px solid #F0C9C4;box-shadow:none}
+  .btn.danger:hover{background:#FDF3F2;filter:none}
+
+  /* ---------- Login ---------- */
+  .login{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(900px 520px at 82% -12%,#1E78D6,transparent 60%),linear-gradient(150deg,#0C2440,#0E2E54 58%,#123F6E)}
+  .login-card{width:100%;max-width:400px;background:#fff;border-radius:22px;box-shadow:0 40px 90px rgba(0,0,0,.45);padding:38px 34px}
+  .l-brand{display:flex;flex-direction:column;align-items:center;gap:5px;margin-bottom:24px}
+  .l-brand .wm{font-family:var(--disp);font-size:27px;font-weight:700;letter-spacing:-.01em;text-transform:uppercase}
+  .l-brand .wm b{color:var(--primary);font-weight:700}
+  .l-brand .sub{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+  .err{margin-top:15px;font-size:13px;color:var(--danger);font-weight:600;background:#FDEAEA;padding:11px 13px;border-radius:10px;display:none}
+  .err.show{display:block}
+  .field{margin-bottom:13px}
+
+  /* ---------- App shell ---------- */
+  .app{display:none;min-height:100vh;flex-direction:column}
+  .topbar{background:linear-gradient(100deg,var(--navy),var(--navy-2));color:#fff;padding:14px 26px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:30;box-shadow:0 2px 14px rgba(12,27,46,.2)}
+  .topbar .wm{font-family:var(--disp);font-weight:700;font-size:20px;letter-spacing:-.01em;text-transform:uppercase}
+  .topbar .wm b{color:#7CB8F2}
+  .topbar .pill{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;background:rgba(255,255,255,.15);padding:5px 11px;border-radius:999px;font-weight:600}
+  .topbar .sp{flex:1}
+  .who{display:flex;align-items:center;gap:9px;font-size:13.5px;color:#DCE8F7;font-weight:600}
+  .who-av{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.16);display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff}
+  .out{background:rgba(255,255,255,.12);color:#fff;padding:9px 15px;border-radius:10px;font-size:13px;font-weight:600;transition:background .14s}
+  .out:hover{background:rgba(255,255,255,.22)}
+
+  .content{max-width:1320px;margin:0 auto;width:100%;padding:22px 22px 60px}
+
+  /* ---------- Overview ---------- */
+  .overview{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  @media(max-width:760px){.overview{grid-template-columns:repeat(2,1fr)}}
+  .ov{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 17px;box-shadow:var(--sh);display:flex;gap:13px;align-items:center}
+  .ov-ic{width:42px;height:42px;border-radius:12px;flex:0 0 42px;display:grid;place-items:center;background:var(--primary-3);color:#fff}
+  .ov-ic svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ov.g .ov-ic{background:var(--ok)} .ov.o .ov-ic{background:var(--warn)} .ov.n .ov-ic{background:#334E6E}
+  .ov .l{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);font-weight:700}
+  .ov .v{font-family:var(--disp);font-size:22px;font-weight:700;margin-top:2px;letter-spacing:-.01em}
+
+  /* ---------- Grid ---------- */
+  .grid{display:grid;grid-template-columns:355px 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+  .panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .panel-h h2{margin:0;font-size:15px;letter-spacing:-.01em;font-weight:700}
+  .search{padding:13px 15px 4px}
+  .search input{background:#F5F8FC}
+
+  /* Empresa cards */
+  .emp-list{padding:11px 12px 14px;display:flex;flex-direction:column;gap:9px;max-height:calc(100vh - 260px);overflow:auto}
+  .emp{display:block;width:100%;text-align:left;padding:14px 15px;border-radius:13px;border:1px solid var(--line);background:#fff;transition:border-color .14s,box-shadow .14s,transform .08s}
+  .emp:hover{border-color:var(--primary-2);box-shadow:var(--sh)}
+  .emp.active{border-color:var(--primary);background:#F4F9FF;box-shadow:0 0 0 1px var(--primary) inset}
+  .emp-top{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+  .avatar{width:38px;height:38px;border-radius:11px;flex:0 0 38px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:14px;font-family:var(--disp)}
+  .emp .nm{font-weight:700;font-size:14px;line-height:1.25}
+  .emp .lg{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:1px}
+  .emp-saldo{display:flex;align-items:baseline;gap:6px}
+  .emp-saldo .v{font-family:var(--disp);font-weight:700;font-size:17px;color:var(--primary)}
+  .emp-saldo .l{font-size:11.5px;color:var(--ink-3);font-weight:600}
+  .meter{height:6px;border-radius:6px;background:var(--line);margin-top:9px;overflow:hidden}
+  .meter i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--primary-2),var(--primary))}
+  .meter.hot i{background:linear-gradient(90deg,#E8905A,var(--warn))}
+  .emp-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-top:6px;font-weight:600}
+
+  /* Detail */
+  .empty{padding:60px 30px;text-align:center;color:var(--ink-3)}
+  .empty svg{width:44px;height:44px;stroke:var(--line-2);fill:none;stroke-width:1.5;margin-bottom:12px}
+  .dhead{display:flex;align-items:center;gap:15px;padding:20px 22px;border-bottom:1px solid var(--line)}
+  .dhead .avatar{width:52px;height:52px;border-radius:14px;flex:0 0 52px;font-size:18px}
+  .dhead h1{margin:0;font-size:21px;letter-spacing:-.02em;font-family:var(--disp);font-weight:700}
+  .dhead .sub{font-family:var(--mono);font-size:12px;color:var(--ink-3);margin-top:2px}
+  .dhead .sp{flex:1}
+  .dbody{padding:20px 22px}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}
+  @media(max-width:680px){.kpis{grid-template-columns:repeat(2,1fr)}}
+  .kpi{border:1px solid var(--line);border-radius:14px;padding:15px 16px;background:#F8FBFE}
+  .kpi .kl{display:flex;align-items:center;gap:7px;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);font-weight:700}
+  .kpi .kl svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .kpi .kv{font-family:var(--disp);font-size:22px;font-weight:700;margin-top:6px;letter-spacing:-.01em}
+  .kpi.disp{background:linear-gradient(160deg,#EAF3FE,#E0EDFB);border-color:#CBE0F7}
+  .kpi.disp .kv{color:var(--primary)} .kpi.util .kv{color:var(--warn)} .kpi.res .kv{color:var(--ink-2)}
+  .usebar{margin:18px 0 4px}
+  .usebar .top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-2);font-weight:600;margin-bottom:6px}
+  .usebar .track{height:9px;border-radius:9px;background:var(--line);overflow:hidden;display:flex}
+  .usebar .u{background:var(--warn)} .usebar .r{background:#F0B888}
+
+  .sec{margin-top:26px}
+  .sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:11px;border-bottom:2px solid var(--line);margin-bottom:4px}
+  .sec-h h3{margin:0;font-size:14px;font-weight:700;letter-spacing:-.01em}
+  .sec-h h3 .c{color:var(--ink-3);font-weight:600}
+
+  .tablewrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:480px}
+  th{text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3);font-weight:700;border-bottom:1px solid var(--line)}
+  td{padding:11px 12px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  tbody tr:last-child td,tbody tr:last-child td{border-bottom:none}
+  tr.clickable{cursor:pointer;transition:background .12s}
+  tr.clickable:hover{background:#F5F9FE}
+  .osid{font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+  .tag{font-family:var(--mono);font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:7px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+  .tag::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+  .st-concluida{background:var(--ok-bg);color:var(--ok)}
+  .st-aberta{background:#E4EFFB;color:var(--primary)}
+  .st-em_andamento{background:#FEF1D6;color:#8A6212}
+  .st-solicitada{background:#EDEFF2;color:var(--ink-2)}
+  .st-cancelada{background:#F6E1DE;color:var(--danger)}
+  .credit-in{color:var(--ok);font-weight:700}
+  .muted{color:var(--ink-3);font-size:13px}
+  .empty-mini{padding:22px 4px;text-align:center;color:var(--ink-3);font-size:13px}
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:13px}
+  @media(max-width:560px){.row2,.row3{grid-template-columns:1fr}}
+
+  /* ---------- Modal ---------- */
+  .modal{position:fixed;inset:0;background:rgba(9,20,36,.55);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:32px 16px;z-index:50;overflow:auto}
+  .modal.open{display:flex}
+  .modal-card{background:#fff;border-radius:20px;box-shadow:var(--sh-lg);width:100%;max-width:720px;margin:auto;animation:pop .16s ease}
+  @keyframes pop{from{transform:translateY(8px);opacity:.6}to{transform:none;opacity:1}}
+  @media(prefers-reduced-motion:reduce){.modal-card{animation:none}}
+  .modal-h{display:flex;align-items:center;justify-content:space-between;padding:19px 24px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;border-radius:20px 20px 0 0;z-index:1}
+  .modal-h h3{margin:0;font-size:17px;font-weight:700;font-family:var(--disp);letter-spacing:-.01em}
+  .modal-h .x{background:#F1F5F9;color:var(--ink-2);width:34px;height:34px;border-radius:10px;font-size:19px;line-height:1;transition:background .14s}
+  .modal-h .x:hover{background:#E4EAF1}
+  .modal-b{padding:22px 24px}
+  .modal-f{display:flex;gap:10px;justify-content:flex-end;padding:16px 24px;border-top:1px solid var(--line);position:sticky;bottom:0;background:#fff;border-radius:0 0 20px 20px}
+  .modal-f .sp{flex:1}
+  .sec-t{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-3);font-weight:700;margin:22px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
+  .tl-row{display:grid;grid-template-columns:130px 80px 1fr auto;gap:8px;margin-bottom:9px;align-items:start}
+  @media(max-width:560px){.tl-row{grid-template-columns:1fr 1fr}}
+  .tl-del{background:#FDEAEA;color:var(--danger);border-radius:10px;padding:0 13px;font-weight:700;font-size:18px;align-self:stretch;transition:background .14s}
+  .tl-del:hover{background:#F8D7D4}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--navy);color:#fff;padding:13px 22px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:var(--sh-lg);z-index:80;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;display:flex;align-items:center;gap:9px}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast::before{content:"";width:8px;height:8px;border-radius:50%;background:#5FE0A8}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login" id="login">
+  <div class="login-card">
+    <div class="l-brand">
+      <div class="wm">EXPERT <b>WORK</b></div>
+      <div class="sub">Painel administrativo · Celiware</div>
+    </div>
+    <div class="field"><label for="alogin">Usuário</label><input id="alogin" autocomplete="username" placeholder="valdir" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="field"><label for="apass">Senha</label><input id="apass" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn" style="width:100%;margin-top:8px" onclick="doLogin()">Entrar</button>
+    <div class="err" id="loginErr">Usuário ou senha inválidos.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="wm">EXPERT <b>WORK</b></div>
+    <span class="pill">Admin geral</span>
+    <span class="sp"></span>
+    <div class="who"><span class="who-av" id="admAv">CW</span><span id="admName"></span></div>
+    <button class="out" onclick="logout()">Sair</button>
+  </header>
+
+  <main class="content">
+    <section class="overview" id="overview"></section>
+    <div class="grid">
+      <aside class="panel col-emp">
+        <div class="panel-h"><h2>Empresas</h2><button class="btn sm" onclick="openEmpresa()">+ Nova</button></div>
+        <div class="search"><input id="empSearch" placeholder="Buscar empresa…" oninput="renderEmpList()"></div>
+        <div class="emp-list" id="empList"><div class="empty-mini">Carregando…</div></div>
+      </aside>
+      <section class="panel col-detail" id="detail">
+        <div class="empty">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          <div>Selecione uma empresa à esquerda<br>para ver saldo e ordens de serviço.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-card">
+    <div class="modal-h"><h3 id="mTitle">—</h3><button class="x" onclick="closeModal()">×</button></div>
+    <div class="modal-b" id="mBody"></div>
+    <div class="modal-f" id="mFoot"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let TOKEN=null, ADMIN=null, EMPRESAS=[], CURRENT=null;
+const $=id=>document.getElementById(id);
+const AV_COLORS=['#1565C0','#0C7F63','#B4460A','#6D28D9','#0E7490','#BE185D','#334E6E'];
+
+function money(v){return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function moneyK(v){v=Number(v)||0;return v>=1000?'R$ '+(v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'k':money(v);}
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtDate(iso){if(!iso)return '—';const p=String(iso).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:iso;}
+function initials(name){return (String(name||'').split(/\s+/).filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('')||String(name||'?').slice(0,2)).toUpperCase();}
+function avColor(s){let h=0;for(const c of String(s||''))h=(h*31+c.charCodeAt(0))>>>0;return AV_COLORS[h%AV_COLORS.length];}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+const ST_LABEL={solicitada:'Solicitada',aberta:'Aberta',em_andamento:'Em andamento',concluida:'Concluída',cancelada:'Cancelada'};
+
+async function api(method,path,body){
+  const opt={method,headers:{}};
+  if(TOKEN)opt.headers['Authorization']='Bearer '+TOKEN;
+  if(body!==undefined){opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(body);}
+  const r=await fetch(path,opt);
+  const j=await r.json().catch(()=>({}));
+  if(r.status===401){logout();throw new Error('Sessão expirada.');}
+  if(!r.ok||j.status===0)throw new Error(j.message||('Erro HTTP '+r.status));
+  return j;
+}
+
+/* ---------- auth ---------- */
+async function doLogin(){
+  const login=$('alogin').value.trim(), senha=$('apass').value;
+  try{
+    const j=await api('POST','/api/admin/login',{login,senha});
+    TOKEN=j.token;ADMIN=j.admin;
+    $('loginErr').classList.remove('show');
+    $('login').style.display='none';$('app').style.display='flex';
+    $('admName').textContent=ADMIN.nome;$('admAv').textContent=initials(ADMIN.nome);
+    loadEmpresas();
+  }catch(e){$('loginErr').textContent=e.message||'Falha no login.';$('loginErr').classList.add('show');}
+}
+function logout(){
+  if(TOKEN)fetch('/api/admin/logout',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN}}).catch(()=>{});
+  TOKEN=null;ADMIN=null;CURRENT=null;
+  $('app').style.display='none';$('login').style.display='flex';$('apass').value='';
+}
+
+/* ---------- empresas ---------- */
+async function loadEmpresas(keepCurrent){
+  const j=await api('GET','/api/admin/empresas');
+  EMPRESAS=j.empresas||[];
+  renderOverview();renderEmpList();
+  if(keepCurrent&&CURRENT)openDetail(CURRENT);
+}
+function renderOverview(){
+  const n=EMPRESAS.length;
+  const disp=EMPRESAS.reduce((s,e)=>s+(e.saldo.disponivel||0),0);
+  const util=EMPRESAS.reduce((s,e)=>s+(e.saldo.utilizado||0),0);
+  const os=EMPRESAS.reduce((s,e)=>s+(e.totalOS||0),0);
+  $('overview').innerHTML=`
+    <div class="ov n"><div class="ov-ic"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></div><div><div class="l">Empresas</div><div class="v num">${n}</div></div></div>
+    <div class="ov"><div class="ov-ic"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg></div><div><div class="l">Disponível total</div><div class="v num">${moneyK(disp)}</div></div></div>
+    <div class="ov o"><div class="ov-ic"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="l">Utilizado total</div><div class="v num">${moneyK(util)}</div></div></div>
+    <div class="ov g"><div class="ov-ic"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5M9 13l2 2 4-4"/></svg></div><div><div class="l">Ordens de serviço</div><div class="v num">${os}</div></div></div>`;
+}
+function renderEmpList(){
+  const q=($('empSearch')?$('empSearch').value:'').toLowerCase().trim();
+  const list=EMPRESAS.filter(e=>!q||(e.empresa.nome||'').toLowerCase().includes(q)||(e.login||'').toLowerCase().includes(q));
+  const el=$('empList');
+  if(!EMPRESAS.length){el.innerHTML='<div class="empty-mini">Nenhuma empresa ainda.<br>Clique em “+ Nova”.</div>';return;}
+  if(!list.length){el.innerHTML='<div class="empty-mini">Nada encontrado para “'+esc(q)+'”.</div>';return;}
+  el.innerHTML=list.map(e=>{
+    const dep=e.saldo.depositado||0, pct=dep>0?Math.min(100,Math.round(((e.saldo.utilizado||0)+(e.saldo.reservado||0))/dep*100)):0;
+    return `<button class="emp ${CURRENT===e.id?'active':''}" onclick="openDetail('${e.id}')">
+      <div class="emp-top"><span class="avatar" style="background:${avColor(e.id)}">${initials(e.empresa.nome||e.login)}</span>
+        <div><div class="nm">${esc(e.empresa.nome||e.login)}</div><div class="lg">${esc(e.login)} · ${e.totalOS} OS</div></div></div>
+      <div class="emp-saldo"><span class="v num">${money(e.saldo.disponivel)}</span><span class="l">disponível</span></div>
+      <div class="meter ${pct>=85?'hot':''}"><i style="width:${pct}%"></i></div>
+      <div class="emp-meta"><span>${pct}% comprometido</span><span>${moneyK(dep)} depositado</span></div>
+    </button>`;
+  }).join('');
+}
+
+/* ---------- detalhe ---------- */
+async function openDetail(id){
+  CURRENT=id;renderEmpList();
+  $('detail').innerHTML='<div class="empty">Carregando…</div>';
+  const j=await api('GET','/api/admin/empresas/'+encodeURIComponent(id));
+  const emp=j.empresa, led=j.ledger, s=j.saldo;
+  const oss=(led.ordens_de_servico||[]).slice().sort((a,b)=>String(b.data_abertura||'').localeCompare(String(a.data_abertura||'')));
+  const recs=(led.recargas||[]).slice().sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
+  const dep=s.depositado||0, comprometido=(s.utilizado||0)+(s.reservado||0);
+  const pu=dep>0?(s.utilizado/dep*100):0, pr=dep>0?(s.reservado/dep*100):0;
+  $('detail').innerHTML=`
+    <div class="dhead">
+      <span class="avatar" style="background:${avColor(emp.id)}">${initials(emp.empresa.nome||emp.login)}</span>
+      <div><h1>${esc(emp.empresa.nome||emp.login)}</h1><div class="sub">${esc(emp.empresa.cnpj||'sem CNPJ')} · ${esc(emp.empresa.segmento||'—')} · login ${esc(emp.login)}</div></div>
+      <span class="sp"></span>
+      <button class="btn sm ghost" onclick="openEmpresa('${emp.id}')">Editar cadastro</button>
+    </div>
+    <div class="dbody">
+      <div class="kpis">
+        <div class="kpi disp"><div class="kl"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Disponível</div><div class="kv num">${money(s.disponivel)}</div></div>
+        <div class="kpi"><div class="kl">Depositado</div><div class="kv num">${money(s.depositado)}</div></div>
+        <div class="kpi util"><div class="kl">Utilizado</div><div class="kv num">${money(s.utilizado)}</div></div>
+        <div class="kpi res"><div class="kl">Reservado</div><div class="kv num">${money(s.reservado)}</div></div>
+      </div>
+      <div class="usebar">
+        <div class="top"><span>${dep>0?Math.round(comprometido/dep*100):0}% do crédito comprometido</span><span class="num">${money(comprometido)} / ${money(dep)}</span></div>
+        <div class="track"><div class="u" style="width:${pu}%"></div><div class="r" style="width:${pr}%"></div></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Créditos <span class="c">· ${recs.length} recarga(s)</span></h3><button class="btn sm" onclick="openRecarga('${emp.id}')">+ Adicionar crédito</button></div>
+        <div class="tablewrap"><table><thead><tr><th>Data</th><th>Descrição</th><th style="text-align:right">Valor</th></tr></thead><tbody>
+          ${recs.length?recs.map(r=>`<tr><td class="num">${fmtDate(r.data)}</td><td>${esc(r.descricao||'')}</td><td class="num credit-in" style="text-align:right">+${money(r.valor)}</td></tr>`).join(''):'<tr><td colspan="3" class="empty-mini">Sem recargas.</td></tr>'}
+        </tbody></table></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-h"><h3>Ordens de Serviço <span class="c">· ${oss.length}</span></h3><button class="btn sm" onclick="openOS('${emp.id}')">+ Nova OS</button></div>
+        <div class="tablewrap"><table><thead><tr><th>OS</th><th>Título</th><th>Status</th><th style="text-align:right">Previsto</th><th style="text-align:right">Realizado</th><th></th></tr></thead><tbody>
+          ${oss.length?oss.map(o=>`<tr class="clickable" onclick='openOS("${emp.id}",${JSON.stringify(o.id)})'>
+            <td class="osid">${esc(o.id)}</td>
+            <td><strong>${esc(o.titulo||'')}</strong><div class="lg" style="font-family:var(--mono);font-size:11px;color:var(--ink-3)">${fmtDate(o.data_abertura)}</div></td>
+            <td><span class="tag st-${esc(o.status)}">${ST_LABEL[o.status]||esc(o.status)}</span></td>
+            <td class="num" style="text-align:right">${money(o.creditos&&o.creditos.previsto)}</td>
+            <td class="num" style="text-align:right">${money(o.creditos&&o.creditos.realizado)}</td>
+            <td style="text-align:right"><span class="btn sm ghost" style="pointer-events:none">Editar</span></td>
+          </tr>`).join(''):'<tr><td colspan="6" class="empty-mini">Nenhuma OS. Clique em “+ Nova OS”.</td></tr>'}
+        </tbody></table></div>
+      </div>
+    </div>`;
+}
+
+/* ---------- modal infra ---------- */
+function showModal(title,bodyHTML,footHTML){$('mTitle').textContent=title;$('mBody').innerHTML=bodyHTML;$('mFoot').innerHTML=footHTML;$('modal').classList.add('open');}
+function closeModal(){$('modal').classList.remove('open');}
+function val(id){const el=$(id);return el?el.value:'';}
+
+/* ---------- empresa ---------- */
+function openEmpresa(id){
+  const e=id?EMPRESAS.find(x=>x.id===id):null;const d=e?e.empresa:{};
+  showModal(id?'Editar empresa':'Nova empresa',`
+    <div class="row2">
+      <div class="field"><label>Nome da empresa</label><input id="f_nome" value="${esc(d.nome||'')}"></div>
+      <div class="field"><label>Segmento</label><input id="f_seg" value="${esc(d.segmento||'')}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>CNPJ</label><input id="f_cnpj" value="${esc(d.cnpj||'')}"></div>
+      <div class="field"><label>Login (usuário/e-mail)</label><input id="f_login" value="${esc(e?e.login:'')}" ${id?'disabled':''}></div>
+    </div>
+    <div class="field"><label>${id?'Nova senha (em branco = manter)':'Senha'}</label><input id="f_senha" type="text" placeholder="mín. 6 caracteres"></div>
+  `,`<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveEmpresa(${id?JSON.stringify(id):'null'})">Salvar</button>`);
+}
+async function saveEmpresa(id){
+  const body={nome:val('f_nome'),segmento:val('f_seg'),cnpj:val('f_cnpj')};
+  const senha=val('f_senha');
+  try{
+    if(id){ if(senha)body.senha=senha; await api('PUT','/api/admin/empresas/'+encodeURIComponent(id),body); }
+    else{ body.login=val('f_login'); body.senha=senha; const j=await api('POST','/api/admin/empresas',body); CURRENT=j.empresa.id; }
+    closeModal();toast('Empresa salva.');await loadEmpresas(true);
+  }catch(e){alert(e.message);}
+}
+
+/* ---------- recarga ---------- */
+function openRecarga(id){
+  const hoje=new Date().toISOString().slice(0,10);
+  showModal('Adicionar crédito',`
+    <div class="row2">
+      <div class="field"><label>Valor (R$)</label><input id="r_valor" type="number" min="0" step="0.01" placeholder="10000"></div>
+      <div class="field"><label>Data</label><input id="r_data" type="date" value="${hoje}"></div>
+    </div>
+    <div class="field"><label>Descrição</label><input id="r_desc" value="Recarga de créditos"></div>
+  `,`<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveRecarga('${id}')">Adicionar crédito</button>`);
+}
+async function saveRecarga(id){
+  try{
+    await api('POST','/api/admin/empresas/'+encodeURIComponent(id)+'/recargas',{valor:val('r_valor'),data:val('r_data'),descricao:val('r_desc')});
+    closeModal();toast('Crédito adicionado.');await loadEmpresas(true);
+  }catch(e){alert(e.message);}
+}
+
+/* ---------- OS + timeline ---------- */
+const STATUS_OPTS=['solicitada','aberta','em_andamento','concluida','cancelada'];
+const PRIOR_OPTS=[['alta','Alta'],['media','Média'],['baixa','Baixa']];
+const TIPO_OPTS=[['corretiva','Corretiva'],['preventiva','Preventiva'],['preditiva','Preditiva'],['melhoria','Melhoria'],['novo_projeto','Novo projeto'],['instalacao','Instalação']];
+let OS_TL=[];
+function selOpts(list,cur){return list.map(v=>Array.isArray(v)?`<option value="${v[0]}" ${cur===v[0]?'selected':''}>${v[1]}</option>`:`<option value="${v}" ${cur===v?'selected':''}>${ST_LABEL[v]||v}</option>`).join('');}
+
+async function openOS(empId,osId){
+  let o={};
+  if(osId){const j=await api('GET','/api/admin/empresas/'+encodeURIComponent(empId));o=(j.ledger.ordens_de_servico||[]).find(x=>String(x.id)===String(osId))||{};}
+  const c=o.creditos||{},eq=o.equipamento||{},eqp=o.equipe||{};
+  OS_TL=Array.isArray(o.timeline)?JSON.parse(JSON.stringify(o.timeline)):[];
+  showModal(osId?('Editar '+o.id):'Nova Ordem de Serviço',`
+    <div class="field"><label>Título</label><input id="o_titulo" value="${esc(o.titulo||'')}" placeholder="Ex.: Manutenção do compressor"></div>
+    <div class="row3">
+      <div class="field"><label>Status</label><select id="o_status">${selOpts(STATUS_OPTS,o.status||'aberta')}</select></div>
+      <div class="field"><label>Prioridade</label><select id="o_prio">${selOpts(PRIOR_OPTS,o.prioridade||'media')}</select></div>
+      <div class="field"><label>Tipo</label><select id="o_tipo">${selOpts(TIPO_OPTS,o.tipo||'corretiva')}</select></div>
+    </div>
+    <div class="row3">
+      <div class="field"><label>Categoria (gráfico)</label><input id="o_cat" value="${esc(o.categoria||'')}" placeholder="Mecânica, Elétrica…"></div>
+      <div class="field"><label>Abertura</label><input id="o_ab" type="date" value="${(o.data_abertura||'').slice(0,10)}"></div>
+      <div class="field"><label>Conclusão</label><input id="o_cc" type="date" value="${(o.data_conclusao||'').slice(0,10)}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Crédito previsto (R$)</label><input id="o_prev" type="number" step="0.01" value="${c.previsto||0}"></div>
+      <div class="field"><label>Crédito realizado (R$)</label><input id="o_real" type="number" step="0.01" value="${c.realizado||0}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Local</label><input id="o_local" value="${esc(o.local||'')}"></div>
+      <div class="field"><label>Equipamento</label><input id="o_equip" value="${esc(eq.nome||'')}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Responsável (equipe)</label><input id="o_resp" value="${esc(eqp.responsavel||'')}"></div>
+      <div class="field"><label>Horas realizadas</label><input id="o_horas" type="number" step="0.5" value="${eqp.horas_realizadas||0}"></div>
+    </div>
+    <div class="field"><label>Descrição</label><textarea id="o_desc" rows="2">${esc(o.descricao||'')}</textarea></div>
+    <div class="field"><label>Diagnóstico</label><textarea id="o_diag" rows="2">${esc(o.diagnostico||'')}</textarea></div>
+    <div class="field"><label>Observações</label><textarea id="o_obs" rows="2">${esc(o.observacoes||'')}</textarea></div>
+    <div class="sec-t">Timeline · marcos do atendimento (o cliente vê isto na OS)</div>
+    <div id="tlBox"></div>
+    <button class="btn sm ghost" style="margin-top:8px" onclick="tlAdd()">+ Adicionar marco</button>
+  `,`${osId?`<button class="btn danger" onclick="delOS('${empId}','${esc(o.id)}')">Excluir</button>`:''}<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveOS('${empId}',${osId?JSON.stringify(o.id):'null'})">Salvar OS</button>`);
+  renderTL();
+}
+function renderTL(){
+  $('tlBox').innerHTML=OS_TL.map((t,i)=>`
+    <div class="tl-row">
+      <input type="date" value="${(t.data||'').slice(0,10)}" onchange="OS_TL[${i}].data=this.value">
+      <input placeholder="hh:mm" value="${esc(t.hora||'')}" onchange="OS_TL[${i}].hora=this.value">
+      <div>
+        <input placeholder="Título do marco" value="${esc(t.titulo||'')}" onchange="OS_TL[${i}].titulo=this.value" style="margin-bottom:7px">
+        <input placeholder="Descrição" value="${esc(t.descricao||'')}" onchange="OS_TL[${i}].descricao=this.value">
+      </div>
+      <button class="tl-del" onclick="tlDel(${i})" title="Remover marco">×</button>
+    </div>`).join('')||'<div class="empty-mini" style="text-align:left;padding:6px 0">Nenhum marco ainda.</div>';
+}
+function tlAdd(){OS_TL.push({data:new Date().toISOString().slice(0,10),hora:'',marco:'etapa',titulo:'',descricao:''});renderTL();}
+function tlDel(i){OS_TL.splice(i,1);renderTL();}
+
+async function saveOS(empId,osId){
+  const body={
+    titulo:val('o_titulo'),status:val('o_status'),prioridade:val('o_prio'),tipo:val('o_tipo'),
+    categoria:val('o_cat'),data_abertura:val('o_ab'),data_conclusao:val('o_cc')||null,
+    creditos:{previsto:Number(val('o_prev'))||0,realizado:Number(val('o_real'))||0},
+    local:val('o_local'),equipamento:{nome:val('o_equip')},
+    equipe:{responsavel:val('o_resp'),horas_realizadas:Number(val('o_horas'))||0},
+    descricao:val('o_desc'),diagnostico:val('o_diag'),observacoes:val('o_obs'),
+    timeline:OS_TL,
+  };
+  if(!body.titulo){alert('Informe o título da OS.');return;}
+  try{
+    if(osId)await api('PUT','/api/admin/empresas/'+encodeURIComponent(empId)+'/os/'+encodeURIComponent(osId),body);
+    else await api('POST','/api/admin/empresas/'+encodeURIComponent(empId)+'/os',body);
+    closeModal();toast('OS salva.');await loadEmpresas(true);
+  }catch(e){alert(e.message);}
+}
+async function delOS(empId,osId){
+  if(!confirm('Excluir a OS '+osId+'? Esta ação não pode ser desfeita.'))return;
+  try{await api('DELETE','/api/admin/empresas/'+encodeURIComponent(empId)+'/os/'+encodeURIComponent(osId));closeModal();toast('OS excluída.');await loadEmpresas(true);}catch(e){alert(e.message);}
+}
+</script>
+</body>
+</html>

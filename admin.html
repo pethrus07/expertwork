@@ -420,7 +420,7 @@ function openEmpresa(id){
       <div class="field"><label>Login (usuário/e-mail)</label><input id="f_login" value="${esc(e?e.login:'')}" ${id?'disabled':''}></div>
     </div>
     <div class="field"><label>${id?'Nova senha (em branco = manter)':'Senha'}</label><input id="f_senha" type="text" placeholder="mín. 6 caracteres"></div>
-  `,`<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveEmpresa(${id?JSON.stringify(id):'null'})">Salvar</button>`);
+  `,`<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveEmpresa(${id?`'${esc(id)}'`:'null'})">Salvar</button>`);
 }
 async function saveEmpresa(id){
   const body={nome:val('f_nome'),segmento:val('f_seg'),cnpj:val('f_cnpj')};
@@ -501,7 +501,7 @@ async function openOS(empId,osId){
       <input type="file" accept="image/*" multiple style="display:none" onchange="fotoAdd(this)">
     </label>
     <div class="up-hint">As imagens são reduzidas no navegador antes de salvar (máx. ~1400px, JPEG).</div>
-  `,`${osId?`<button class="btn danger" onclick="delOS('${empId}','${esc(o.id)}')">Excluir</button>`:''}<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveOS('${empId}',${osId?JSON.stringify(o.id):'null'})">Salvar OS</button>`);
+  `,`${osId?`<button class="btn danger" onclick="delOS('${empId}','${esc(o.id)}')">Excluir</button>`:''}<span class="sp"></span><button class="btn ghost" onclick="closeModal()">Cancelar</button><button class="btn" onclick="saveOS('${empId}',${osId?`'${esc(o.id)}'`:'null'})">Salvar OS</button>`);
   renderTL();renderFotos();
 }
 function renderTL(){

@@ -681,7 +681,7 @@
 let TOKEN=null;  // token de sessão obtido no login (/api/login)
 
 /* ---------- Estado ---------- */
-let D=null, current='dashboard', chartServico=null, chartTipo=null;
+let D=null, current='dashboard', currentArg=null, chartServico=null, chartTipo=null;
 let osFilter='todas', osQuery='', osSort='recentes';
 const norm=s=>(s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
@@ -758,7 +758,7 @@ function setTop(v){const[t,s]=TITLES[v];document.getElementById('pageTitle').tex
 function setActive(v){document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active',b.dataset.view===v));}
 
 function go(view,arg){
-  current=view;
+  current=view;currentArg=arg;
   if(chartServico){chartServico.destroy();chartServico=null;}
   if(chartTipo){chartTipo.destroy();chartTipo=null;}
   const c=document.getElementById('content');
@@ -1354,7 +1354,7 @@ function logout(){
   TOKEN=null; try{localStorage.removeItem('ew_token');}catch(e){}
   if(chartServico){chartServico.destroy();chartServico=null;}
   if(chartTipo){chartTipo.destroy();chartTipo=null;}
-  D=null;current='dashboard';
+  D=null;current='dashboard';currentArg=null;
   document.getElementById('content').innerHTML='';
   document.getElementById('appShell').style.display='none';
   document.getElementById('tabbar').style.display='none';
@@ -1374,6 +1374,32 @@ function boot(){
   computeNotifs();
   go('dashboard');
 }
+
+/* ---------- Auto-atualização: rebusca os dados ao voltar para a aba ----------
+   O portal não faz polling. Sem isto, uma OS criada/editada no admin só
+   aparecia após um F5. Aqui, quando a aba volta ao foco, rebuscamos /api/portal
+   e re-renderizamos a MESMA tela (sem tirar o usuário do lugar). */
+let _refreshing=false,_lastRefresh=0;
+async function refreshData(){
+  if(!TOKEN||_refreshing)return;
+  if(Date.now()-_lastRefresh<4000)return; // foco+visibilidade disparam juntos
+  _refreshing=true;
+  try{
+    const r=await fetch('/api/portal',{headers:{'Authorization':'Bearer '+TOKEN},cache:'no-store'});
+    if(!r.ok)throw 0;
+    const j=await r.json();
+    if(j.status!==1||!j.dashboard)throw 0;
+    D=j.dashboard;_lastRefresh=Date.now();
+    computeNotifs();
+    if(current==='os'){
+      const ainda=D.ordens_de_servico.find(o=>o.id===currentArg);
+      go(ainda?'os':'oslist',ainda?currentArg:undefined);
+    }else go(current||'dashboard');
+  }catch(e){/* silencioso: mantém o que já está na tela */}
+  finally{_refreshing=false;}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshData();});
+window.addEventListener('focus',refreshData);
 
 /* ---------- Notificações do cliente (sino) ---------- */
 function escN(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}

@@ -82,7 +82,11 @@ async function serveStatic(req, res, pathname) {
   try {
     const file = await fs.readFile(filePath);
     const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': contentTypes[ext] || 'application/octet-stream' });
+    const headers = { 'Content-Type': contentTypes[ext] || 'application/octet-stream' };
+    // HTML nunca é cacheado: garante que correções (admin/portal) cheguem ao
+    // navegador sem depender de F5 forçado do usuário.
+    if (ext === '.html') headers['Cache-Control'] = 'no-store, must-revalidate';
+    res.writeHead(200, headers);
     res.end(file);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
